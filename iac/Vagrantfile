@@ -1,0 +1,38 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  # Do not pay attention to this parameter
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vm.provider :virtualbox do |vb|
+      config.vbguest.auto_update = false
+    end
+  end
+
+  # Define the gitlab_server VM
+  config.vm.define "yoann_server" do |server|
+    # Specify the Vagrant box to use
+    server.vm.box = "centos/7" #(newer one)
+    server.vbguest.installer_options = { allow_kernel_upgrade: true }
+    # Specify the VM ip address
+    config.vm.network "forwarded_port", guest: 3000, host: 5000
+    # Specify the VM specs when using the Virtualbox provisioner
+    server.vm.provider "virtualbox" do |vb|
+      vb.name =  "yoann_server.local"
+      # VM RAM in MB
+      vb.memory = 2048
+      # VM CPUs
+      vb.cpus = 1
+    end
+  end
+
+  # Use Vagrant Ansible provisioner
+  config.vm.provision "ansible_local" do |ansible|
+    # The path to the playbooks entry point
+    ansible.playbook = "playbooks/run.yml"
+  end
+
+  # Sync the project folder to the VM (exclude node_modules folder)
+  config.vm.synced_folder "../userapi", "/home/vagrant", type: "rsync", rsync__auto: true, rsync__exclude: ['./node_modules*']
+end

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yoann-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yoann-devops
+  template:
+    metadata:
+      labels:
+        app: yoann-devops
+    spec:
+      containers:
+        - name: yoann-api
+          image: yoann018/test:latest
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+              scheme: HTTP
+            periodSeconds: 20
+            initialDelaySeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+              scheme: HTTP
+            periodSeconds: 50
+            initialDelaySeconds: 120
+          env:
+            - name: REDIS_HOST
+              value: "127.0.0.1"
+            - name: REDIS_PORT
+              value: "6379"
+        - name: yoann-redis
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+      restartPolicy: Always
+  strategy:
+    type: RollingUpdate
